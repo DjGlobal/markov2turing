@@ -10,9 +10,9 @@
 <body>
 <div class="container-fluid">
 <div class="row">
-	<div class="col-md-5">
+	<div class="col-md-12">
 		<h2>Алгоритм Маркова</h2>
-		<textarea class="form-control" id="markovTextarea" rows="10">
+<!-- 		<textarea class="form-control input-lg" id="markovTextarea" rows="10">
 // Прибавление единицы к двоичному числу
 1*->*0
 0*->.1
@@ -21,14 +21,18 @@ $0->0$
 $1->1$
 $->*
 ->$
-</textarea>
+</textarea> -->
+	<div class="form-group">
+		<input type="text" class="form-control" id="markovTextarea" value="abc->baa">
 	</div>
-	<div class="col-md-2">
-		<a href="#" class="btn btn-outline-dark btn-block" onclick="markov2turingClick(event);return false;" style="margin-top: 150px;" role="button">>></a>
+	<div class="form-group">
+		<a href="#" class="btn btn-dark" onclick="markov2turingClick(event);return false;" style="" role="button">Преобразовать в машину Тьюрингу</a>
 	</div>
-	<div class="col-md-5">
+	</div>
+	<div class="col-md-12">
 		<h2>Машина Тьюринга</h2>
-		<textarea class="form-control" id="turingTextarea" rows="10"></textarea>
+		<pre id="turingOut"></pre>
+		<!-- <textarea class="form-control" id="turingTextarea" rows="10"></textarea> -->
 	</div>
 </div>
 
@@ -45,6 +49,7 @@ $->*
 				this.to = a[1];
 				this.end = 0;
 			}
+			this.alphabet = (this.to+this.from).split('').filter(function(item, i, ar){ return ar.indexOf(item) === i; });
 			
 		}
 	}
@@ -57,6 +62,7 @@ $->*
 
 	function markov2turingClick (event) {
 		event.preventDefault();
+		$("#turingOut").html("");
 		markov2turing();
 	}
 
@@ -74,10 +80,12 @@ $->*
 		}
 	}
 	function out(str) {
-		console.log (str);
-		$('#turingTextarea').val(function(i, text) {
-			return text + str+ "\n";
-		});
+		// console.log (str);
+		// $('#turingTextarea').val(function(i, text) {
+		// 	return text + str+ "\n";
+		// });
+		$('#turingOut').append(str+ "\n");
+		
 	}
 	class searchStates {
 		constructor(a, b) {
@@ -85,34 +93,45 @@ $->*
 			this.notfound = b;
 		}
 	}
-	function search(str, prodnum, nextprodnum) {
+	function search(prod, prodnum, nextprodnum) {
 		var s;
-		for (var i = 0; i < str.length; i++) {
-			s = str.charAt(i);
-			if (i == (str.length - 1)) 
+		var str = prod.from;
+		for (var i = 0; i < prod.from.length; i++) {
+			s = prod.from.charAt(i);
+			if (i == (prod.from.length - 1)) {
+				out("// Последний символ найден, подстрока найдена");
 				out("prod"+prodnum+"_search"+i+" "+s+" -> prod"+prodnum+"_found "+s+" E");
-			else
+			}
+			else {
+				// out("//подстрока найдена");
+
 				out("prod"+prodnum+"_search"+i+" "+s+" -> prod"+prodnum+"_search"+(i+1)+" "+s+" R");
+			}
 			
-			if ((i != 0) && (i != (str.length - 1))){
-				for (var j = 0; j < str.length; j++){
+			if ((i != 0) && (i != (prod.from.length - 1))){
+
+				out("// Набор команд для возврата к начальному состоянию (найден лишний символ)");
+
+				for (var j = 0; j < prod.from.length; j++){
 					if (j!=i)
-						out("prod"+prodnum+"_search"+i+" "+str.charAt(j)+" -> prod"+prodnum+"_search0 "+str.charAt(j)+" E");
+						out("prod"+prodnum+"_search"+i+" "+prod.from.charAt(j)+" -> prod"+prodnum+"_search0 "+prod.from.charAt(j)+" E");
 				}
-				out("prod"+prodnum+"_search"+i+" "+str.charAt(0)+" -> prod"+prodnum+"_search1 "+str.charAt(0)+" R");
+
+				out("// Возврат к состоянию первого символа");
+				out("prod"+prodnum+"_search"+i+" "+prod.from.charAt(0)+" -> prod"+prodnum+"_search1 "+prod.from.charAt(0)+" R");
 			}
 
 			
 
 		}
-		out("//конец строки, подстрока не найдена");
-		for (var i = 0; i < str.length; i++) {
+		out("// Конец строки, подстрока не найдена");
+		for (var i = 0; i < prod.from.length; i++) {
 			out("prod"+prodnum+"_search"+i+" B -> prod"+prodnum+"_notfound B L");
 		}
-		out("//движемся в начало строки");
+		out("// Движемся в начало строки");
 
-		for (var i = 0; i < str.length; i++) {
-			out("prod"+prodnum+"_notfound "+str.charAt(i)+" -> prod"+prodnum+"_notfound "+str.charAt(i)+" L");
+		for (var i = 0; i < prod.alphabet.length; i++) {
+			out("prod"+prodnum+"_notfound "+prod.alphabet[i]+" -> prod"+prodnum+"_notfound "+prod.alphabet[i]+" L");
 		}
 		if (nextprodnum >= 0) {
 			out("prod"+prodnum+"_notfound B -> prod"+nextprodnum+"_search0 B R");
@@ -121,17 +140,56 @@ $->*
 
 		return new searchStates("prod"+prodnum+"_found", "prod"+prodnum+"_notfound");
 	}
+
+	function shift(n, direction='R') {
+
+	}
 	
+	function replace(prod, prodnum, search) {
+		// if (prod.from.length < prod.to.length)
+		// 	shift();
+		// if (prod.from.length > prod.to.length)
+		// 	shift();
+		
+		out("// Приступаем к записи");
+		if (prod.from.length == prod.to.length) {
+			// не нужно двигать ничего
+			out("prod"+prodnum+"_found "+prod.from.charAt(prod.from.length-1)+" -> prod"+prodnum+"_write"+(prod.from.length-1)+" "+prod.from.charAt(prod.from.length-1)+" E");
+		}
+		for (var i = prod.to.length - 1; i >= 0; i--) {
+			var charFrom;
+			if (i<prod.from.length) charFrom = prod.from.charAt(i);
+			else charFrom = 'B';
+
+			out("prod"+prodnum+"_write"+i+" "+charFrom+" -> prod"+prodnum+"_write"+i+" "+prod.to.charAt(i)+" E");
+			
+			// prod.to[i]
+		}
+
+		//к началу строки
+		out("// Возвращаемся к началу строки");
+		for (var i = 0; i < prod.alphabet.length; i++) {
+			out("prod"+prodnum+"_write0 "+prod.alphabet[i]+" -> prod"+prodnum+"_write0 "+prod.alphabet[i]+" L");
+		}
+		if (prod.end) {
+			out("prod"+prodnum+"_write0 B -> end B R");
+		} else {
+			out("prod"+prodnum+"_write0 B -> prod"+prodnum+"_search0 B R");
+		}
+
+
+	}
 	
 	function m2t(markovProductionStr, prodnum) {
-		console.log(markovProductionStr[prodnum]);
+		// console.log(markovProductionStr[prodnum]);
 		var m = new markovProduction(markovProductionStr[prodnum]);
-		// console.log(m);
+		out("// Алфавит: " + m.alphabet.join(" "));
+		console.log(m);
 		if (prodnum < markovProductionStr.length - 1) nextprodnum = prodnum + 1;
 		else nextprodnum = -1;
-		var s = search(m.from, prodnum, nextprodnum);
+		var s = search(m, prodnum, nextprodnum);
 		// console.log(s);
-		
+		var r = replace(m, prodnum, s);
 		// out("prod"+prodnum+"_search"+i+" "+str.charAt(0)+" -> prod"+prodnum+"_search1 "+str.charAt(0)+" R");
 
 

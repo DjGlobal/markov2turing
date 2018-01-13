@@ -9,10 +9,134 @@
 </head>
 <body>
 <div class="container-fluid">
-
-
+<div class="row">
+	<div class="col-md-5">
+		<h2>Алгоритм Маркова</h2>
+		<textarea class="form-control" id="markovTextarea" rows="10">
+// Прибавление единицы к двоичному числу
+1*->*0
+0*->.1
+*->.1
+$0->0$
+$1->1$
+$->*
+->$
+</textarea>
+	</div>
+	<div class="col-md-2">
+		<a href="#" class="btn btn-outline-dark btn-block" onclick="markov2turingClick(event);return false;" style="margin-top: 150px;" role="button">>></a>
+	</div>
+	<div class="col-md-5">
+		<h2>Машина Тьюринга</h2>
+		<textarea class="form-control" id="turingTextarea" rows="10"></textarea>
+	</div>
 </div>
 
+</div>
+<script type="text/javascript">
+	class markovProduction {
+		constructor(str) {
+			var a = str.split('->');
+			this.from = a[0];
+			if (a[1].substr(0,1)=='.') {
+				this.to = a[1].substr(1)
+				this.end = 1;
+			} else {
+				this.to = a[1];
+				this.end = 0;
+			}
+			
+		}
+	}
+	// Array Remove - By John Resig (MIT Licensed)
+	Array.prototype.remove = function(from, to) {
+		var rest = this.slice((to || from) + 1 || this.length);
+		this.length = from < 0 ? this.length + from : from;
+		return this.push.apply(this, rest);
+	};
+
+	function markov2turingClick (event) {
+		event.preventDefault();
+		markov2turing();
+	}
+
+	function markov2turing() {
+		var markovStringArray = document.querySelector('#markovTextarea').value.split('\n');
+		var turingStringArray = [];
+		for (var i = markovStringArray.length - 1; i >= 0; i--) {
+			if ((markovStringArray[i].substr(0,2) == "//") || markovStringArray[i] == "")
+				markovStringArray.remove(i);
+		}
+
+		for (var i = 0 ; i < markovStringArray.length; i++) {
+		// 	turingStringArray = turingStringArray.concat(m2t(markovStringArray[i]));
+			m2t(markovStringArray, i);
+		}
+	}
+	function out(str) {
+		console.log (str);
+		$('#turingTextarea').val(function(i, text) {
+			return text + str+ "\n";
+		});
+	}
+	class searchStates {
+		constructor(a, b) {
+			this.found = a;
+			this.notfound = b;
+		}
+	}
+	function search(str, prodnum, nextprodnum) {
+		var s;
+		for (var i = 0; i < str.length; i++) {
+			s = str.charAt(i);
+			if (i == (str.length - 1)) 
+				out("prod"+prodnum+"_search"+i+" "+s+" -> prod"+prodnum+"_found "+s+" E");
+			else
+				out("prod"+prodnum+"_search"+i+" "+s+" -> prod"+prodnum+"_search"+(i+1)+" "+s+" R");
+			
+			if ((i != 0) && (i != (str.length - 1))){
+				for (var j = 0; j < str.length; j++){
+					if (j!=i)
+						out("prod"+prodnum+"_search"+i+" "+str.charAt(j)+" -> prod"+prodnum+"_search0 "+str.charAt(j)+" E");
+				}
+				out("prod"+prodnum+"_search"+i+" "+str.charAt(0)+" -> prod"+prodnum+"_search1 "+str.charAt(0)+" R");
+			}
+
+			
+
+		}
+		out("//конец строки, подстрока не найдена");
+		for (var i = 0; i < str.length; i++) {
+			out("prod"+prodnum+"_search"+i+" B -> prod"+prodnum+"_notfound B L");
+		}
+		out("//движемся в начало строки");
+
+		for (var i = 0; i < str.length; i++) {
+			out("prod"+prodnum+"_notfound "+str.charAt(i)+" -> prod"+prodnum+"_notfound "+str.charAt(i)+" L");
+		}
+		if (nextprodnum >= 0) {
+			out("prod"+prodnum+"_notfound B -> prod"+nextprodnum+"_search0 B R");
+		} else 
+			out("prod"+prodnum+"_notfound B -> error B R");
+
+		return new searchStates("prod"+prodnum+"_found", "prod"+prodnum+"_notfound");
+	}
+	
+	
+	function m2t(markovProductionStr, prodnum) {
+		console.log(markovProductionStr[prodnum]);
+		var m = new markovProduction(markovProductionStr[prodnum]);
+		// console.log(m);
+		if (prodnum < markovProductionStr.length - 1) nextprodnum = prodnum + 1;
+		else nextprodnum = -1;
+		var s = search(m.from, prodnum, nextprodnum);
+		// console.log(s);
+		
+		// out("prod"+prodnum+"_search"+i+" "+str.charAt(0)+" -> prod"+prodnum+"_search1 "+str.charAt(0)+" R");
+
+
+	}
+</script>
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
